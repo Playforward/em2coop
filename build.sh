@@ -9,9 +9,9 @@ i686-w64-mingw32-g++ \
   -DWIN32_LEAN_AND_MEAN \
   -s -shared -Wl,--enable-stdcall-fixup -Wl,--exclude-all-symbols \
   -o build/binkw32.dll \
-  src/main.cpp src/util.cpp src/config.cpp src/game_thread.cpp \
+  src/main.cpp src/build_check.cpp src/util.cpp src/config.cpp src/game_thread.cpp \
   src/players.cpp src/coop.cpp src/input.cpp src/split_screen.cpp \
   src/world_views.cpp src/fixes.cpp src/proxy_exports.def \
-  -luser32
+  -luser32 -lbcrypt
 
 echo "built build/binkw32.dll ($(stat -c %s build/binkw32.dll) bytes)"

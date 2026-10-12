@@ -2,6 +2,7 @@
 
 #include <cstdio>
 
+#include "build_check.h"
 #include "config.h"
 #include "coop.h"
 #include "engine.h"
@@ -27,6 +28,13 @@ void task_install() {
 }
 
 DWORD WINAPI bootstrap(LPVOID) {
+    // Bink keeps working either way: the exports forward regardless.
+    if (!build_check::is_supported_game()) {
+        log_line("[em2coop] this DEM2.exe is not the build em2coop was made "
+                 "for; co-op disabled, the game runs unmodified");
+        return 1;
+    }
+
     char path[MAX_PATH];
     snprintf(path, sizeof(path), "%s\\em2coop.ini", g_directory);
     config_load(path);

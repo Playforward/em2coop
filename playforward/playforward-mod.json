@@ -1,0 +1,34 @@
+{
+  "requires": [
+    {
+      "file": "DEM2.exe",
+      "sha256": "aeb0f4173156378f4e05811b97c2aea0b3783404a53ee770f43d66d25a80931d"
+    },
+    {
+      "file": "binkw32.dll",
+      "sha256": "d3cffc9349c13b196a9f893bb6ed184db8148237b68a749c005b0f6dd882cc79"
+    }
+  ],
+  "keep_originals": [
+    {
+      "file": "binkw32.dll",
+      "as": "binkw32_real.dll"
+    }
+  ],
+  "patch_files": [
+    {
+      "file": "InputMappings.xml",
+      "delta": "patches/InputMappings.xml.vcdiff",
+      "from_sha256": "135cb10d7ac17aaab12c4bc95e25946649193caf365196332279d4400558321a",
+      "to_sha256": "21b365bc1c875f4a9829498a64b2380965ec1cb2f0769ad8dae9d966bb38d6bf",
+      "to_size": 71756
+    },
+    {
+      "file": "packfiles/UIhud.pak",
+      "delta": "patches/UIhud.pak.vcdiff",
+      "from_sha256": "1c6fce6db99d9fcab892a7c841d9cbabf2a8ba6db306c088298d9bf56678d246",
+      "to_sha256": "111719b4b915537850ad8b68ca073a72ccb3c3f4abca8aea83f4cde54afbdf52",
+      "to_size": 593496
+    }
+  ]
+}

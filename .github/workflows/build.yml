@@ -1,0 +1,58 @@
+name: Build and package
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build the DLL and the PlayForward archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # git describe names the archive after the nearest tag.
+          fetch-depth: 0
+      - name: Install MinGW and zip
+        run: |
+          timeout 5m sudo apt-get update -o Acquire::Retries=2
+          timeout 10m sudo env DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends g++-mingw-w64-i686 binutils-mingw-w64-i686 zip unzip
+      - name: Package
+        run: ./package.sh
+      - name: Validate the DLL
+        shell: bash
+        run: |
+          file build/binkw32.dll | grep -q 'PE32.*Intel 80386\|PE32.*Intel i386'
+          # Every Bink export forwards to the game's own DLL.
+          test "$(i686-w64-mingw32-objdump -p build/binkw32.dll | grep -c 'Forwarder RVA')" -eq "$(grep -c '= binkw32_real\.' src/proxy_exports.def)"
+          if i686-w64-mingw32-objdump -p build/binkw32.dll | grep -Eiq 'lib(winpthread|gcc|stdc\+\+)'; then
+            echo 'The DLL unexpectedly depends on a MinGW runtime DLL.' >&2
+            exit 1
+          fi
+      - name: Validate the archive
+        shell: bash
+        run: |
+          zip=$(ls dist/em2coop-*.zip)
+          for entry in binkw32.dll em2coop.ini playforward-mod.json; do
+            unzip -l "$zip" "$entry" > /dev/null
+          done
+          # Every delta the instructions name is in the archive.
+          python3 - "$zip" <<'PY'
+          import json, sys, zipfile
+          archive = zipfile.ZipFile(sys.argv[1])
+          names = set(archive.namelist())
+          manifest = json.loads(archive.read('playforward-mod.json'))
+          missing = [p['delta'] for p in manifest['patch_files'] if p['delta'] not in names]
+          sys.exit(f'missing deltas: {missing}' if missing else 0)
+          PY
+      - name: Publish the archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: em2coop
+          path: dist/em2coop-*.zip
+          if-no-files-found: error

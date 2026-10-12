@@ -62,6 +62,7 @@ engine state that assumes one camera per frame:
 | `split_screen.cpp` | vertical split rendering |
 | `world_views.cpp` | billboards and world prompts per half |
 | `fixes.cpp` | playlist wrap, cursor HUD feed |
+| `build_check.cpp` | refuses any `DEM2.exe` but the one `engine.h` was read from |
 | `game_thread.cpp` | runs engine calls on the game thread |
 | `util.cpp` | log, safe memory access, patch helpers |
 
@@ -72,19 +73,55 @@ the level, and again to leave (Oswald returns to the AI). The split follows:
 Mickey left, Oswald right; level scripts turn it off and back on around
 transitions, as on consoles. Options are in `em2coop.ini`.
 
-Requires the data from this repo on the game side:
-`coop_test/InputMappings.xml` (the player-2 action set, including
-`MouseCursor2Push`) and the HUD pak with `p2cursor`
-(`tools/add_p2cursor.py`).
+Besides the DLL, co-op needs two of the game's data files changed:
+`InputMappings.xml` (the player-2 action set, including `MouseCursor2Push`)
+and `packfiles/UIhud.pak` (player 2's reticle, the split-aware HUD script and
+Oswald's status panel). Those files are Disney's, so they are never shipped:
+`playforward/patches/` holds VCDIFF deltas that are applied to the player's
+own copies.
 
-## Build and install
+## Supported build
+
+Only the Steam release of `DEM2.exe` (SHA-256 in `engine::kGameSha256`).
+Every address in `engine.h` was read from that file. On any other build the
+DLL logs the mismatch and does nothing but forward Bink, and PlayForward
+refuses to install the package in the first place.
+
+## Install (PlayForward)
+
+Players switch the mod on in PlayForward. The client checks the game is the
+supported build, keeps the game's `binkw32.dll` as `binkw32_real.dll`, drops
+in the proxy and `em2coop.ini`, and patches the two data files, verifying each
+one's SHA-256 before and after. Switching the mod off puts every file back.
+The instructions it follows are `playforward/playforward-mod.json`.
+
+## Package
 
 ```bash
-./build.sh
+./package.sh [version]
 ```
 
+builds the DLL and writes `dist/em2coop-<version>.zip`: the archive uploaded
+to PlayForward. CI (`.github/workflows/build.yml`) builds and checks it on
+every push.
+
+When the data patches change (the HUD pak or the input mappings are rebuilt
+with the research tools), regenerate the deltas and instructions from an
+untouched install:
+
+```bash
+tools/make_patches.py <stock game folder> <modded InputMappings.xml> <modded UIhud.pak>
+```
+
+It needs `xdelta3`, and refuses a game folder whose `DEM2.exe` is not the
+supported build.
+
+## Manual install
+
 In the game directory: rename the original `binkw32.dll` to
-`binkw32_real.dll`, copy `build/binkw32.dll` in, optionally `em2coop.ini`.
+`binkw32_real.dll`, copy `build/binkw32.dll` in, optionally `em2coop.ini`,
+and apply the two deltas with
+`xdelta3 -d -s <original> playforward/patches/<file>.vcdiff <output>`.
 Log: `em2coop.log` next to the DLL.
 
 ## Known open items

@@ -4,6 +4,9 @@
 
 namespace engine {
 
+constexpr char kGameSha256[] =
+    "aeb0f4173156378f4e05811b97c2aea0b3783404a53ee770f43d66d25a80931d";
+
 constexpr DWORD kImageBase = 0x00400000;
 
 inline BYTE* image() {
